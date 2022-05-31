@@ -10,6 +10,17 @@ const FILES_TO_CACHE = [
     "icons/icon-512x512.png"
   ];
 
+self.addEventListener('fetch', function (e) {
+    e.respondWith(
+      caches.match(e.request).then(function (request) {
+        if (request) {
+          return request;
+        } else {
+          return fetch(e.request)
+        }
+      })
+    )
+  })
 
 
   self.addEventListener('install', function (e) {
@@ -20,3 +31,23 @@ const FILES_TO_CACHE = [
       })
     )
 })
+
+self.addEventListener('activate', function (e) {
+    e.waitUntil(
+      caches.keys().then(function (keyList) {
+        let cacheKeeplist = keyList.filter(function (key) {
+          return key.indexOf(APP_PREFIX);
+        });
+
+        cacheKeeplist.push(CACHE_NAME);
+
+        return Promise.all(
+            keyList.map(function(key, i) {
+                if (cacheKeeplist.indexOf(key) === -1) {
+                    return caches.delete(keyList[i]);
+                }
+            })
+        );
+        })
+    );
+});
